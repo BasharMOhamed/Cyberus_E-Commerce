@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="mb-4 text-white">Your Shopping Cart</h1>
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Cart Items</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Product</th>
+                                <th scope="col">Price</th>
+                                <th scope="col">Quantity</th>
+                                <th scope="col">Subtotal</th>
+                                <th scope="col">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in cart %}
+                            <tr>
+                                <td>{{ item.name }}</td>
+                                <td>${{ "%.2f" | format(item.price) }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ "%.2f" | format(item.price * item.quantity) }}</td>
+                                <td>
+                                    <a href={{url_for("increase_decrease", type= "decrease", product_id = item.id)}} class="btn btn-outline-danger btn-sm">-</a>
+                                    <a href={{url_for("increase_decrease", type= "increase", product_id = item.id)}} class="btn btn-outline-success btn-sm">+</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between mt-4">
+                    <h4>Total: ${{ "%.2f" | format(total) }}</h4>
+                    <div class="d-flex gap-2">
+                        <a href={{url_for("index")}} class="btn btn-danger">Cancel</a>
+                        <a href={{url_for("checkout", total = total)}} class="btn btn-success">Proceed to Checkout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS (Optional if you need interactive components) -->
+    <script src={{url_for('static', filename='js/bootstrap.bundle.min.js')}}></script>
+</body>
+</html>

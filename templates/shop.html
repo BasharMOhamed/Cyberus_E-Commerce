@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/bootstrap.min.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/sty.css') }}"
+    />
+    <title>Home</title>
+  </head>
+  <body class="centered-body">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href={{url_for("index")}}>Eco-Mercy</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href={{url_for("index")}}>Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Profile</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href={{url_for("cart")}}>Cart</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Logout</a>
+            </li>
+          </ul>
+
+          <h6 class="me-3 my-auto">{{username}}</h6>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container my-4">
+      <h1 class="text-center">Our Products</h1>
+      <div class="row">
+        {% for product in products %}
+        <div class="col-md-4">
+          <div class="card mb-4 shadow-sm">
+            <img
+              src="{{ product.image_url }}"
+              class="card-img-top"
+              style="width: 300px"
+              alt="{{ product.name }}"
+            />
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text">$ {{ "%.2f"|format(product.price) }}</p>
+              <form method="POST" action="{{ url_for('add_to_cart', product_id = product.id, product_name = product.name, price = product.price) }}">
+                <input
+                  type="hidden"
+                  name="product_id"
+                  value="{{ product.id }}"
+                />
+                <button type="submit" class="btn btn-primary">
+                  Add to Cart
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </body>
+</html>

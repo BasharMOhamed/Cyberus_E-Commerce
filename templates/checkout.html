@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-white">
+    <div class="container mt-5">
+        <div class="card w-50">
+
+            <h2 class="card-body">Total Price: ${{total}}</h2>
+            <a href={{url_for("confirm", total = total)}} class="btn btn-primary">Confirm Process</a>
+        </div>
+    </div>  
+    <script src={{url_for('static', filename='js/bootstrap.bundle.min.js')}}></script>
+</body>
+</html>
