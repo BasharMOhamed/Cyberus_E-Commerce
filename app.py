@@ -10,6 +10,12 @@ import validator, os
 commentsConnection = dp.connect_to_database(name="comments.db")
 dp.init_comments_table(commentsConnection)
 
+usersConnection = dp.connect_to_database(name="users.db")
+dp.init_users_db(usersConnection)
+
+productsConnection = dp.connect_to_database(name="products.db")
+dp.init_products_db(productsConnection)
+
 app = Flask(__name__)
 
 limiter = Limiter(app=app, key_func=get_remote_address,
@@ -26,20 +32,88 @@ PRODUCTS = [
 ]
 
 
+#                       INDEX
+
 @app.route("/")
 @limiter.limit("10 per minute")
 def index():
-    # TEMP
-    session["username"] = "Bashar"
-    # session["cart"] = [
-    #     {'id': 1, 'name': 'Laptop', 'price': 1000, 'quantity': 1},
-    #     {'id': 2, 'name': 'Smartphone', 'price': 500, 'quantity': 2},
-    # ]
-    return render_template("shop.html", products = PRODUCTS, username = session["username"])
+    if "username" in session:
+        isAdmin = dp.is_admin(usersConnection, session["username"])
+        products = dp.get_all_products(productsConnection)
+        return render_template("shop.html", products = products, username = session["username"], isAdmin = isAdmin)
+    else:
+        return render_template("login.html")    
 
 
+#                       LOGIN
+@app.route("/auth", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        user = dp.get_user(usersConnection, username)
+        if user:
+            print(user)
+            if utils.is_password_match(password, user[2]):
+                session["username"] = username
+                return redirect(url_for("index"))
+            else:
+                flash("Wrong username or password")
+        else:
+            flash("wrong username") 
+    return render_template("login.html")               
+
+
+
+
+
+#                       REGISTER
+@app.route("/register", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
+def register():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        confirmPassword = request.form.get("confirm_password")
+        existingUser = dp.get_user(usersConnection, username)
+        if existingUser:
+            flash("Username already exists")
+        else:
+            if password == confirmPassword and utils.is_strong_password(password):
+                dp.add_user(usersConnection, username, password)
+                return redirect(url_for("login"))
+            else:
+                flash("Passwords do not match")
+    return render_template("register.html")    
+
+
+
+
+
+
+
+
+#                       LOGOUT
+@app.route("/logout", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
+def logout():
+    session.pop("username")
+    if "cart" in session:
+        session.pop("cart")
+    return redirect(url_for("index"))
+
+
+
+
+
+
+
+
+
+#                       PROFILE
 @app.route('/profile', methods=['GET', 'POST'])
-def setting():
+def profile():
     if 'username' in session:
 
         if request.method == 'GET':
@@ -49,9 +123,10 @@ def setting():
             if(username != session["username"]):
                 return "<h1>PERMISION DENIED [IDOR]</h1>"
             
-            # data = db.get_user(connection, username)
+            data = dp.get_user(usersConnection, username)
             if data:
-                return render_template('setting.html', data=data)
+                isAdmin = dp.is_admin(usersConnection, session["username"])
+                return render_template('profile.html', data=data, isAdmin = isAdmin, username = session["username"])
             else:
                 return "user not found"
         elif request.method == 'POST':
@@ -70,7 +145,7 @@ def setting():
                     elif not validator.allowed_file(photo.filename):
                         return f"unallowed extention."
                     else:
-                        dp.update_photo(connection, photo.filename, username)
+                        dp.update_photo(usersConnection, photo.filename, username)
                         photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo.filename))# 
             elif form_type == 'update_user_data':
                 user_data = { 
@@ -79,53 +154,79 @@ def setting():
                     "lname": request.form.get('last_name'),
                     "card": request.form.get('card')
                 }
-                dp.update_user(connection , user_data)
+                dp.update_user(usersConnection , user_data)
             
-            data = dp.get_user(connection, username)
-            return render_template('setting.html', data=data) 
+            data = dp.get_user(usersConnection, username)
+            isAdmin = dp.is_admin(usersConnection,session["username"])
+            return render_template('profile.html', data=data, isAdmin = isAdmin, username = session["username"]) 
     else:
         return redirect(url_for('login'))
 
     
+#                       ADD PRODUCT
+@app.route('/add_product', methods=['GET', 'POST'])
+def add_product():
+    if 'username' in session:
+        if request.method == "POST":
+            product_name = request.form.get('product_name')
+            product_price = request.form.get('product_price')
+            image_url = request.form.get('image_url')
+            if not product_name or not product_price or not image_url:
+                flash("Missing values")
+            else:
+                dp.add_product(productsConnection,product_name, product_price, image_url)
+                return redirect(url_for("index"))
+        return render_template("addproduct.html")        
+    else:
+        return redirect(url_for("login"))    
     
-    
+#                       COMMENTS    
 @app.route("/comments", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
 def addComment():
-    comments = dp.get_comments(commentsConnection)
+    if  'username' in session:
+        comments = dp.get_comments(commentsConnection)
 
-    if request.method == 'POST':
-        text = Markup(request.form['comment'])
-        
-        # TO PREVENT XSS
-        text_str = str(text)
-        cleaned_text = re.sub(r'<script.*?>.*?</script>', 'Prevented XSS Script BY BASHAR', text_str, flags=re.DOTALL)
-        
-        username = session.get('username')
-        if username:
-            dp.add_comment(commentsConnection, username, cleaned_text)
-            comments = dp.get_comments(commentsConnection)
-        else:
-            flash("You must be logged in to post a comment.", "warning")
-
-    return render_template('comments.html', comments=comments)
+        if request.method == 'POST':
+            text = Markup(request.form['comment'])
+            
+            # TO PREVENT XSS
+            text_str = str(text)
+            cleaned_text = re.sub(r'<script.*?>.*?</script>', 'Prevented XSS Script BY BASHAR', text_str, flags=re.DOTALL)
+            
+            username = session.get('username')
+            if username:
+                dp.add_comment(commentsConnection, username, cleaned_text)
+                comments = dp.get_comments(commentsConnection)
+            else:
+                flash("You must be logged in to post a comment.", "warning")
+        isAdmin = dp.is_admin(usersConnection, session["username"])
+        return render_template('comments.html', comments=comments, username = session["username"], isAdmin = isAdmin)
+    else:
+        return redirect(url_for('login'))
     
-
+    
+    
+#                   CLEAR COMMENTS
 @app.route('/clear_comments', methods=['GET','POST'])
 def clearComments():
     dp.clear_comments(commentsConnection)
     return redirect(url_for('addComment'))        
     
     
+    
+#                       CART    
 @app.route('/cart')
 @limiter.limit("10 per minute")
 def cart():
-    cart = session.get('cart', [])
-    total = sum(int(item['price']) * int(item['quantity']) for item in cart)
-    print(total)
-    print(cart)
-    return render_template('cart.html', cart=cart, total=total)
+    if  'username' in session:
+        cart = session.get('cart', [])
+        total = sum(int(item['price']) * int(item['quantity']) for item in cart)
+        return render_template('cart.html', cart=cart, total=total)
+    else:
+        return redirect(url_for('login'))
 
+#                   ADD TO CART
 @app.route('/add_to_cart', methods=["GET", "POST"])
 @limiter.limit("50 per minute")
 def add_to_cart():
@@ -162,52 +263,62 @@ def add_to_cart():
 @app.route('/increase_decrease', methods=["GET",'POST'])
 @limiter.limit("10 per minute")
 def increase_decrease():
-    item_id = request.args.get("product_id")
-    cart = session.get('cart', [])
-    type = request.args.get("type")
-    if(type == "increase"):
-        for item in cart:
-            if item['id'] == int(item_id):
-                item['quantity'] += 1
-                break
-    
-    if(type == "decrease"):
-        for item in cart:
-            if item['id'] == int(item_id):
-                if(item['quantity'] > 1):
-                    item['quantity'] -= 1
+    if "username" in session:
+        item_id = request.args.get("product_id")
+        cart = session.get('cart', [])
+        type = request.args.get("type")
+        if not item_id or not cart or not type:
+            return "something went wrong"
+        if(type == "increase"):
+            for item in cart:
+                if item['id'] == int(item_id):
+                    item['quantity'] += 1
                     break
-                else:
-                    cart.remove(item)
-                    break
-                                            
-    session['cart'] = cart
-    return redirect(url_for('cart'))
-
+        
+        if(type == "decrease"):
+            for item in cart:
+                if item['id'] == int(item_id):
+                    if(item['quantity'] > 1):
+                        item['quantity'] -= 1
+                        break
+                    else:
+                        cart.remove(item)
+                        break
+                                                
+        session['cart'] = cart
+        return redirect(url_for('cart'))
+    else:
+        return redirect(url_for('login'))
 
 
 #           CHECKOUT
 @app.route("/checkout")
 @limiter.limit("10 per minute")
 def checkout():
-    cart = session["cart"]
-    real_total = utils.get_real_total(cart, PRODUCTS)
-    session["MAC"] = utils.createMac(real_total)
-    total = request.args.get("total")
-    return render_template("checkout.html", total = total)
+    if  "username" in session:
+        cart = session["cart"]
+        real_total = utils.get_real_total(cart, productsConnection)
+        session["MAC"] = utils.createMac(real_total)
+        total = request.args.get("total")
+        return render_template("checkout.html", total = total)
+    else:
+        return redirect(url_for('login'))
 
 
 #           PAYMENT
 @app.route("/confirm", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
 def confirm():
-    total = request.args.get("total")
-    current_MAC = utils.createMac(total)
-    print(current_MAC)
-    if("MAC" in session and current_MAC == session["MAC"]):
-        return f"<h2>Purchase confirmed at price ${total}.</h2>"
+    if  "username" in session:
+        total = request.args.get("total")
+        current_MAC = utils.createMac(total)
+        print(current_MAC)
+        if("MAC" in session and current_MAC == session["MAC"]):
+            return f"<h2>Purchase confirmed at price ${total}.</h2>"
+        else:
+            return f"<h2>Purchase Failed, Try Again..</h2>"
     else:
-        return f"<h2>Purchase Failed, Try Again..</h2>"
+        return redirect(url_for('login'))
 
 
 

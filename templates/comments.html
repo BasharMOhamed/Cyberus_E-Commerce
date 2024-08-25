@@ -14,6 +14,60 @@
     <title>Comments</title>
   </head>
   <body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href={{url_for("index")}}>Eco-Mercy</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            {% if not isAdmin%}
+
+            <li class="nav-item">
+              <a class="nav-link" aria-current="page" href={{url_for("index")}}>Home</a>
+            </li>
+            {% endif%}
+            {% if isAdmin%}
+            <li class="nav-item">
+                <a class="nav-link" href={{url_for("add_product")}}>Add-Product</a>
+              </li>
+            {% endif%}
+            <li class="nav-item">
+                <a class="nav-link active" href={{url_for("addComment")}}>Comments</a>
+              </li>
+            <li class="nav-item">
+              <a class="nav-link" href={{url_for("profile")}}>Profile</a>
+            </li>
+            {% if not isAdmin%}
+            <li class="nav-item">
+              <a class="nav-link" href={{url_for("cart")}}>Cart</a>
+            </li>
+            {% endif%}
+            {% if isAdmin %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('logout') }}">Search</a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a class="nav-link" href={{url_for("logout")}}>Logout</a>
+            </li>
+          </ul>
+
+          <h6 class="me-3 my-auto">{{username}}</h6>
+        </div>
+      </div>
+    </nav>
+
+
     <div class="container-fluid">
       <div class="row justify-content-center">
         <div class="col-md-9 col-lg-9 form-container p-4 mt-5 me-1">

@@ -30,20 +30,35 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            {% if not isAdmin%}
+
             <li class="nav-item">
               <a class="nav-link active" aria-current="page" href={{url_for("index")}}>Home</a>
             </li>
+            {% endif%}
+            {% if isAdmin%}
+            <li class="nav-item">
+                <a class="nav-link" href={{url_for("add_product")}}>Add-Product</a>
+              </li>
+            {% endif%}
             <li class="nav-item">
                 <a class="nav-link" href={{url_for("addComment")}}>Comments</a>
               </li>
             <li class="nav-item">
-              <a class="nav-link" href="#">Profile</a>
+              <a class="nav-link" href={{url_for("profile")}}>Profile</a>
             </li>
+            {% if not isAdmin%}
             <li class="nav-item">
               <a class="nav-link" href={{url_for("cart")}}>Cart</a>
             </li>
+            {% endif%}
+            {% if isAdmin %}
             <li class="nav-item">
-              <a class="nav-link" href="#">Logout</a>
+              <a class="nav-link" href="{{ url_for('logout') }}">Search</a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a class="nav-link" href={{url_for("logout")}}>Logout</a>
             </li>
           </ul>
 
@@ -59,19 +74,19 @@
         <div class="col-md-4">
           <div class="card mb-4 shadow-sm">
             <img
-              src="{{ product.image_url }}"
+              src="{{ product[3] }}"
               class="card-img-top"
               style="width: 300px"
-              alt="{{ product.name }}"
+              alt="{{ product[1] }}"
             />
             <div class="card-body">
-              <h5 class="card-title">{{ product.name }}</h5>
-              <p class="card-text">$ {{ "%.2f"|format(product.price) }}</p>
-              <form method="POST" action="{{ url_for('add_to_cart', product_id = product.id, product_name = product.name, price = product.price) }}">
+              <h5 class="card-title">{{ product[1] }}</h5>
+              <p class="card-text">$ {{ "%.2f"|format(product[2]) }}</p>
+              <form method="POST" action="{{ url_for('add_to_cart', product_id = product[0], product_name = product[1], price = product[2]) }}">
                 <input
                   type="hidden"
                   name="product_id"
-                  value="{{ product.id }}"
+                  value="{{ product[0] }}"
                 />
                 <button type="submit" class="btn btn-primary">
                   Add to Cart
