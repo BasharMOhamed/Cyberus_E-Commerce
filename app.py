@@ -17,6 +17,7 @@ productsConnection = dp.connect_to_database(name="products.db")
 dp.init_products_db(productsConnection)
 
 app = Flask(__name__)
+app.config['uploads'] = os.path.join(os.getcwd(), 'static/uploads')
 
 limiter = Limiter(app=app, key_func=get_remote_address,
                   default_limits=["50 per minute"], storage_uri="memory://")
@@ -61,7 +62,7 @@ def login():
             else:
                 flash("Wrong username or password")
         else:
-            flash("wrong username") 
+            flash("wrong username", "danger") 
     return render_template("login.html")               
 
 
@@ -80,11 +81,14 @@ def register():
         if existingUser:
             flash("Username already exists")
         else:
-            if password == confirmPassword and utils.is_strong_password(password):
-                dp.add_user(usersConnection, username, password)
-                return redirect(url_for("login"))
+            if utils.is_strong_password(password): 
+                if password == confirmPassword:
+                    dp.add_user(usersConnection, username, password, "images.png")
+                    return redirect(url_for("login"))
+                else:
+                    flash("Passwords does not match")
             else:
-                flash("Passwords do not match")
+                flash("Password is not strong enough")         
     return render_template("register.html")    
 
 
@@ -117,7 +121,7 @@ def profile():
     if 'username' in session:
 
         if request.method == 'GET':
-            username = request.args.get('username', session['username'])
+            username = request.args.get('username')
             
             #               IDOR
             if(username != session["username"]):
@@ -126,6 +130,7 @@ def profile():
             data = dp.get_user(usersConnection, username)
             if data:
                 isAdmin = dp.is_admin(usersConnection, session["username"])
+                print(data)
                 return render_template('profile.html', data=data, isAdmin = isAdmin, username = session["username"])
             else:
                 return "user not found"
@@ -146,7 +151,7 @@ def profile():
                         return f"unallowed extention."
                     else:
                         dp.update_photo(usersConnection, photo.filename, username)
-                        photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo.filename))# 
+                        photo.save(os.path.join(app.config['uploads'], photo.filename))
             elif form_type == 'update_user_data':
                 user_data = { 
                     "username": session['username'], 
@@ -157,6 +162,7 @@ def profile():
                 dp.update_user(usersConnection , user_data)
             
             data = dp.get_user(usersConnection, username)
+            print(data)
             isAdmin = dp.is_admin(usersConnection,session["username"])
             return render_template('profile.html', data=data, isAdmin = isAdmin, username = session["username"]) 
     else:

@@ -14,16 +14,17 @@ def init_users_db(connection):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL UNIQUE,
             password TEXT NOT NULL,
-            is_admin BOOLEAN NOT NULL DEFAULT 0
+            is_admin BOOLEAN NOT NULL DEFAULT 0,
+            photo_name TEXT NOT NULL
         )
     ''')
     connection.commit()
     
-def add_user(connection, username, password):
+def add_user(connection, username, password, photo_name):
     cursor = connection.cursor()
     hashed_password = utils.hash_password(password)
-    query = '''INSERT INTO users (username, password) VALUES (?, ?)'''
-    cursor.execute(query, (username, hashed_password))
+    query = '''INSERT INTO users (username, password, photo_name) VALUES (?, ?, ?)'''
+    cursor.execute(query, (username, hashed_password, photo_name))
     connection.commit()
 
 

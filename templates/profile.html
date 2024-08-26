@@ -41,7 +41,7 @@
                   <a class="nav-link" href={{url_for("addComment")}}>Comments</a>
                 </li>
               <li class="nav-item">
-                <a class="nav-link active" href={{url_for("profile")}}>Profile</a>
+                <a class="nav-link active" href={{url_for("profile", username = username)}}>Profile</a>
               </li>
               {% if not isAdmin%}
               <li class="nav-item">
@@ -71,8 +71,10 @@
             <div class="card-header">Profile Picture</div>
             <div class="card-body text-center">
               <img
-                class="profile-picture"
-                src="{{ url_for('static', filename='uploads/images.png') }}"
+                class="rounded-circle"
+                style="width:200px;
+                height:200px; object-fit:cover"
+                src="{{ url_for('static', filename='uploads/' + data[4]) }}"
                 alt="Profile Picture"
               />
               <div class="small text-muted mb-3">
