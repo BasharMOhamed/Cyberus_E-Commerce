@@ -14,7 +14,7 @@
     <title>Home</title>
   </head>
   <body class="centered-body">
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary shadow">
       <div class="container-fluid">
         <a class="navbar-brand" href={{url_for("index")}}>Eco-Mercy</a>
         <button
@@ -54,7 +54,7 @@
             {% endif%}
             {% if isAdmin %}
             <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('logout') }}">Search</a>
+              <a class="nav-link" href="{{ url_for('search_user') }}">Search</a>
             </li>
             {% endif %}
             <li class="nav-item">

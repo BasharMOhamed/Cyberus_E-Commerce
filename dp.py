@@ -57,7 +57,7 @@ def get_all_users(connection):
 
 def search_users(connection, search_query):
     cursor = connection.cursor()
-    query = '''SELECT username FROM users WHERE username LIKE ?'''
+    query = '''SELECT id, username FROM users WHERE username LIKE ?'''
     cursor.execute(query, (f"%{search_query}%",))
     return cursor.fetchall()
 

@@ -168,6 +168,7 @@ def profile():
     else:
         return redirect(url_for('login'))
 
+
     
 #                       ADD PRODUCT
 @app.route('/add_product', methods=['GET', 'POST'])
@@ -182,9 +183,12 @@ def add_product():
             else:
                 dp.add_product(productsConnection,product_name, product_price, image_url)
                 return redirect(url_for("index"))
-        return render_template("addproduct.html")        
+        return render_template("addproduct.html", username = session["username"], isAdmin = 1)        
     else:
         return redirect(url_for("login"))    
+    
+    
+    
     
 #                       COMMENTS    
 @app.route("/comments", methods=["GET", "POST"])
@@ -220,10 +224,22 @@ def clearComments():
     return redirect(url_for('addComment'))        
     
     
+
+#                       SEARCH
+@app.route("/search", methods=["GET", "POST"])
+def search_user():
+    if "username" in session:
+        
+        search_query = request.form.get("query")
+        users = dp.search_users(usersConnection, search_query)
+        print(users)
+        return render_template("search.html", users = users, username = session["username"], isAdmin = 1)        
+    else:
+        return redirect(url_for('login'))
+    
     
 #                       CART    
 @app.route('/cart')
-@limiter.limit("10 per minute")
 def cart():
     if  'username' in session:
         cart = session.get('cart', [])
@@ -232,9 +248,10 @@ def cart():
     else:
         return redirect(url_for('login'))
 
+
+
 #                   ADD TO CART
 @app.route('/add_to_cart', methods=["GET", "POST"])
-@limiter.limit("50 per minute")
 def add_to_cart():
     product_id = int(request.args.get('product_id'))
     product_name = request.args.get('product_name')
@@ -260,14 +277,13 @@ def add_to_cart():
         cart.append({'id': product_id, 'name': product_name, 'price': price, 'quantity': 1})
     session['cart'] = cart
 
-    flash(f"Added product {product_id} with price {price} to your cart.", "success")
     return redirect(url_for('index'))
 
 
 
 #                   INCREASE OR DECREASE
 @app.route('/increase_decrease', methods=["GET",'POST'])
-@limiter.limit("10 per minute")
+@limiter.limit("20 per minute")
 def increase_decrease():
     if "username" in session:
         item_id = request.args.get("product_id")
@@ -295,6 +311,7 @@ def increase_decrease():
         return redirect(url_for('cart'))
     else:
         return redirect(url_for('login'))
+
 
 
 #           CHECKOUT
